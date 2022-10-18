@@ -96,7 +96,8 @@ class AugColor:
 
 class SimpleDataset(Dataset):
     def __init__(self, annotation_file, dirbase=None, has_label=True, transform=None, transform_target=None,
-                 transform_color=None, ix_nolabel=255, fl_normalize=True, **kwargs):
+                 transform_color=None, ix_nolabel=255, fl_normalize=True, dir_imname='/image/',
+                 dir_labelname='/label/', **kwargs):
 
         with open(annotation_file, 'r') as f:
             self.impaths = f.read().split('\n')[:-1]
@@ -105,7 +106,7 @@ class SimpleDataset(Dataset):
             self.impaths = [os.path.join(dirbase, p) for p in self.impaths]
 
         if has_label:
-            self.labelpaths = [p.replace('/image/', '/label/') for p in self.impaths]
+            self.labelpaths = [p.replace(dir_imname, dir_labelname) for p in self.impaths]
 
         self.dirbase = dirbase
         self.has_label = has_label
