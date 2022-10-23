@@ -14,6 +14,6 @@ setup(
         description=DESCRIPTION,
         long_description=LONG_DESCRIPTION,
         packages=find_packages(),
-        install_requires=['torch', 'torchvision', 'numpy'],
+        install_requires=['torch', 'torchvision', 'numpy', 'matplotlib', 'IPython', 'oauth2client', 'pydrive'],
         keywords=['python']
 )
