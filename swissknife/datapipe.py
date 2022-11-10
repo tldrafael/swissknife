@@ -15,7 +15,7 @@ augs.normalize = T.Normalize(mean=[.485, .456, .406], std=[.229, .224, .225])
 augs.normalize_invert = T.Normalize(mean=[-.485/.229, -.456/.224, -.406/.225], std=[1/.229, 1/.224, 1/.225])
 
 
-class AugMMSeg:
+class AugRandomResizingAndFlip:
     def __init__(self, crop_size=(512, 1024), scales=(.5, 2)):
         def f_random_resize(x, interpolation=T.InterpolationMode.BILINEAR):
             random_size = torch.rand(1) * (scales[1] - scales[0]) + scales[0]
