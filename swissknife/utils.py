@@ -61,9 +61,9 @@ class Logger():
 
 
 class LabelColorizer:
-    def __init__(self, n_classes=12, ix_nolabel=255):
-        assert isinstance(ix_nolabel, (int, type(None)))
-        self.ix_nolabel = ix_nolabel
+    def __init__(self, n_classes=12, void_classes=255):
+        assert isinstance(void_classes, (int, type(None)))
+        self.void_classes = void_classes
         self.n_classes = n_classes
         self.map = self.get_pallete()
 
@@ -74,8 +74,8 @@ class LabelColorizer:
         for i in range(1, pal.shape[0]):
             dict_pal[i - 1] = torch.tensor(pal[i])
 
-        if self.ix_nolabel is not None:
-            dict_pal[self.ix_nolabel] = torch.tensor(pal[0])
+        if self.void_classes is not None:
+            dict_pal[self.void_classes] = torch.tensor(pal[0])
         return dict_pal
 
     def __call__(self, mask):
