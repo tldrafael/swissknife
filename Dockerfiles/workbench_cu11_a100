@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.2.2-runtime-ubuntu18.04
+FROM nvidia/cuda:11.6.0-runtime-ubuntu18.04
 
 RUN apt-get update 
 RUN apt-get install -y libhdf5-dev
