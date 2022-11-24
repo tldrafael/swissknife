@@ -43,6 +43,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 RUN apt-get install -y libgl1
 RUN pip3.7 install tqdm
 RUN pip3.7 install ipdb
+RUN pip3.7 install tensorboard
 
 RUN ln -s /usr/bin/python3.7 /usr/bin/python
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
