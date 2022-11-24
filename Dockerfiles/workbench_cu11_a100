@@ -1,0 +1,53 @@
+FROM nvidia/cuda:11.6.0-runtime-ubuntu18.04
+
+RUN apt-get update 
+RUN apt-get install -y libhdf5-dev
+RUN apt-get install -y apt-utils
+RUN apt-get install -y cmake
+RUN apt-get install -y build-essential
+RUN apt-get install -y libopenblas-dev
+RUN apt-get install -y liblapack-dev:amd64
+RUN apt-get install -y libsm6:amd64
+RUN apt-get install -y libxext6:amd64
+RUN apt-get install -y libxrender-dev:amd64
+RUN apt-get install -y libglib2.0-0:amd64
+RUN apt-get install -y python3-distutils
+RUN apt-get install -y python3.7
+RUN apt-get install -y libpython3.7-dev:amd64
+RUN apt-get install -y curl
+RUN apt-get install -y vim
+RUN apt-get install -y git
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py 
+RUN python3.7 get-pip.py
+RUN pip3.7 install h5py
+RUN pip3.7 install dlib
+RUN pip3.7 install opencv-python
+RUN pip3.7 install Flask
+RUN pip3.7 install gevent
+RUN pip3.7 install imutils
+RUN pip3.7 install pillow
+RUN pip3.7 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+RUN pip3.7 install matplotlib
+RUN pip3.7 install scikit-image
+RUN pip3.7 install numpy
+RUN pip3.7 install pandas
+RUN pip3.7 install colour-science
+RUN pip3.7 install scikit-learn
+RUN pip3.7 install xgboost
+RUN pip3.7 install neural_structured_learning
+RUN pip3.7 install sqlalchemy
+RUN pip3.7 install psycopg2-binary
+RUN pip3.7 install jupyterlab
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && apt-get update -y && apt-get install google-cloud-cli -y   
+RUN apt-get install -y libgl1
+RUN pip3.7 install tqdm
+RUN pip3.7 install ipdb
+RUN pip3.7 install tensorboard
+RUN pip3.7 install line_profiler
+
+RUN ln -s /usr/bin/python3.7 /usr/bin/python
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
+
+WORKDIR /home/rafael_pixelcut_app/workspace/
+
+CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root

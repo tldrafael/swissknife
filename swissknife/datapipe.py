@@ -106,7 +106,7 @@ class SimpleDataset(Dataset):
             self.impaths = [os.path.join(dirbase, p) for p in self.impaths]
 
         if has_label:
-            self.labelpaths = [p.replace(dir_imname, dir_labelname) for p in self.impaths]
+            self.labelpaths = [p.replace(dir_imname, dir_labelname).replace('.jpg', '.png') for p in self.impaths]
 
         self.dirbase = dirbase
         self.has_label = has_label
