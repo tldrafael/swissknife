@@ -1,14 +1,26 @@
 FROM nvcr.io/nvidia/tensorrt:22.01-py3
 
-RUN apt update && \
+RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && \
+    echo $CONTAINER_TIMEZONE > /etc/timezone && \
+    apt update && \
+    DEBIAN_FRONTEND=noninteractive && \
     apt install -y vim \
-                   wget
+                   wget \
+                   ffmpeg \
+                   libsm6 \
+                   libxext6 \
+                   libgl1 \
+                   libglib2.0-0
+
+RUN pip install --extra-index-url https://developer.download.nvidia.com/compute/redist --upgrade nvidia-dali-cuda110
 
 RUN pip install jupyterlab \
                 torch \
                 torchvision \
                 line_profiler \
-                matplotlib
+                matplotlib \
+                seaborn \
+                tritonclient[all]
 
 RUN cd /opt/ && \
     git clone --branch v0.4.0 https://github.com/NVIDIA-AI-IOT/torch2trt && \
