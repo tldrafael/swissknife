@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/tensorrt:22.01-py3
+FROM nvcr.io/nvidia/pytorch:22.01-py3
 
 RUN ln -snf /usr/share/zoneinfo/$CONTAINER_TIMEZONE /etc/localtime && \
     echo $CONTAINER_TIMEZONE > /etc/timezone && \
@@ -28,6 +28,7 @@ RUN cd /opt/ && \
     python setup.py install
 
 RUN export PYTHONPATH=$PYTHONPATH:/opt/torch2trt/build/lib/
+RUN pip install opencv-python==4.5.5.64
 
 WORKDIR /home/
 

@@ -1,0 +1,25 @@
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+
+RUN apt-get update && \
+    apt-get install -y cmake \
+                        build-essential \
+                        libopenblas-dev \
+                        libhdf5-dev \
+                        apt-utils \
+                        curl
+
+
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && apt-get install nodejs
+RUN apt-get install -y python3.10 python3-pip
+RUN ln -s /usr/bin/python3.10 /usr/bin/python
+RUN pip install jupyterlab jupyter_ai
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+RUN pip install opencv-python
+RUN apt-get install -y libgl1 libglib2.0-dev
+RUN pip install kornia easydict timm
+
+
+WORKDIR /home/rafael_pixelcut_app/workspace/
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
+
+CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root
