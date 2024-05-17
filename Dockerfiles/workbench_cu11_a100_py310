@@ -36,7 +36,8 @@ RUN pip install jupyterlab \
                 einops \
                 fairscale \ 
                 transformers \
-                'git+https://github.com/facebookresearch/detectron2.git'
+                'git+https://github.com/facebookresearch/detectron2.git' \
+                tritonclient[http]
 
 RUN ln -s /usr/bin/python3.10 /usr/bin/python
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
