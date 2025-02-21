@@ -14,33 +14,46 @@ RUN apt-get update && \
                         git \
                         vim
 
-RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && apt-get install nodejs
-RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+RUN curl -sL https://deb.nodesource.com/setup_16.x | bash - && \
+    apt-get install nodejs
+
 RUN pip install jupyterlab \
-                opencv-python \
+                opencv-python-headless \
                 kornia \
                 easydict \
-                timm \
                 seaborn \
                 line_profiler \
                 pycocotools \
                 matplotlib \
-                onnxruntime \
-                onnx \ 
                 scikit-image \
                 pandas \
                 numpy \
-                tensorboard \
                 imageio[pyav] \
                 scikit-learn \
+                fairscale \
+                pylance \
+                pyarrow \
+                duckdb \
+                imagesize \
+                lancedb \
+                lance
+
+RUN pip install torch==2.4 \
+                torchvision \
+                torchaudio \
+                --index-url https://download.pytorch.org/whl/cu118
+
+RUN pip install tensorboard \
                 einops \
-                fairscale \ 
-                transformers \
+                'git+https://github.com/huggingface/transformers.git' \
                 'git+https://github.com/facebookresearch/detectron2.git' \
+                onnxruntime \
+                timm \
+                onnx \ 
                 tritonclient[http]
 
 RUN ln -s /usr/bin/python3.10 /usr/bin/python
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
 
-WORKDIR /home/rafael/
+WORKDIR /home/rafael/workspace/PX-Matting/notebooks
 # CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root
