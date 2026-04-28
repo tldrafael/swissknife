@@ -50,10 +50,10 @@ RUN pip install --break-system-packages \
                 torch \
                 torchvision \
                 torchaudio \
-                --index-url https://download.pytorch.org/whl/cu128
+                --index-url https://download.pytorch.org/whl/cu126
 
 RUN pip install --break-system-packages \
-                flash-attn
+                "https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
 
 RUN pip install --break-system-packages \
                 deepspeed \
