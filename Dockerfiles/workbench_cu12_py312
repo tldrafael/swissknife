@@ -160,5 +160,18 @@ print("flash_attn:", getattr(flash_attn, "__version__", "unknown"))
 print("detectron2 import: ok")
 PY
 
-CMD ["/bin/bash"]
-CMD ["jupyter-lab", "--no-browser", "--ip", "0.0.0.0", "--allow-root", "--port", "8884"]
+# SSH server and rsync.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        openssh-server \
+        rsync \
+    && mkdir -p /var/run/sshd \
+    && sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+EXPOSE 22 8884
+
+# CMD ["/bin/bash"]
+CMD ["/bin/bash", "-c", "/usr/sbin/sshd && exec jupyter-lab --no-browser --ip 0.0.0.0 --allow-root --port 8884"]
