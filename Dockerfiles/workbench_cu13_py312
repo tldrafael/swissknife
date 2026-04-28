@@ -53,7 +53,7 @@ RUN pip install --break-system-packages \
                 --index-url https://download.pytorch.org/whl/cu130
 
 RUN pip install --break-system-packages \
-                flash-attn --no-build-isolation
+                "https://github.com/adithyaxx/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3+cu13torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
 
 RUN pip install --break-system-packages \
                 deepspeed \
