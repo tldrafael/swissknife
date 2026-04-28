@@ -1,0 +1,78 @@
+FROM nvidia/cuda:12.8.0-devel-ubuntu24.04
+
+RUN apt-get update && \
+    apt-get install -y cmake \
+                        build-essential \
+                        libopenblas-dev \
+                        libhdf5-dev \
+                        apt-utils \
+                        curl \
+                        libgl1 \
+                        libglib2.0-dev \
+                        python3.12 \
+                        python3.12-dev \
+                        python3-pip \
+                        git \
+                        vim \
+                        ninja-build
+
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs
+
+RUN pip install --break-system-packages \
+                packaging \
+                setuptools \
+                wheel
+
+RUN pip install --break-system-packages \
+                jupyterlab \
+                opencv-python-headless \
+                kornia \
+                easydict \
+                seaborn \
+                line_profiler \
+                pycocotools \
+                matplotlib \
+                scikit-image \
+                pandas \
+                numpy \
+                imageio[pyav] \
+                scikit-learn \
+                fairscale \
+                pylance \
+                pyarrow \
+                duckdb \
+                imagesize \
+                lancedb \
+                lance
+
+RUN pip install --break-system-packages \
+                torch \
+                torchvision \
+                torchaudio \
+                --index-url https://download.pytorch.org/whl/cu128
+
+RUN pip install --break-system-packages \
+                flash-attn --no-build-isolation
+
+RUN pip install --break-system-packages \
+                deepspeed \
+                accelerate \
+                tensorboard \
+                einops \
+                transformers \
+                'git+https://github.com/facebookresearch/detectron2.git' \
+                onnxruntime \
+                timm \
+                onnx \
+                tritonclient[http] \
+                bitsandbytes \
+                liger-kernel \
+                torchmetrics
+
+RUN ln -s /usr/bin/python3.12 /usr/bin/python
+ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
+
+WORKDIR /home/rafael/workspace/PX-Matting/notebooks
+# CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root
+CMD ["/bin/bash"]
