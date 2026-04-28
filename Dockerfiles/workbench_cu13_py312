@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.0-devel-ubuntu24.04
+FROM nvidia/cuda:13.0.0-devel-ubuntu24.04
 
 RUN apt-get update && \
     apt-get install -y cmake \
@@ -50,7 +50,7 @@ RUN pip install --break-system-packages \
                 torch \
                 torchvision \
                 torchaudio \
-                --index-url https://download.pytorch.org/whl/cu128
+                --index-url https://download.pytorch.org/whl/cu130
 
 RUN pip install --break-system-packages \
                 flash-attn --no-build-isolation
@@ -73,6 +73,6 @@ RUN pip install --break-system-packages \
 RUN ln -s /usr/bin/python3.12 /usr/bin/python
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
 
-WORKDIR /home/rafael/workspace/PX-Matting/notebooks
+# WORKDIR /home/rafael/workspace/PX-Matting/notebooks
 # CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root
 CMD ["/bin/bash"]
