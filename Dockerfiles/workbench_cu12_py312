@@ -53,9 +53,6 @@ RUN pip install --break-system-packages \
                 --index-url https://download.pytorch.org/whl/cu126
 
 RUN pip install --break-system-packages \
-                "https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
-
-RUN pip install --break-system-packages \
                 deepspeed \
                 accelerate \
                 tensorboard \
@@ -69,6 +66,15 @@ RUN pip install --break-system-packages \
                 bitsandbytes \
                 liger-kernel \
                 torchmetrics
+
+RUN pip install --break-system-packages --force-reinstall --no-deps \
+                torch \
+                torchvision \
+                torchaudio \
+                --index-url https://download.pytorch.org/whl/cu126
+
+RUN pip install --break-system-packages \
+                "https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
 
 RUN ln -s /usr/bin/python3.12 /usr/bin/python
 ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
