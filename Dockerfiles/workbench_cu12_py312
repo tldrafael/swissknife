@@ -87,8 +87,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         duckdb \
         "imageio[pyav]" \
         imagesize \
-        lance \
-        lancedb \
+        pylance \
         matplotlib \
         numpy \
         opencv-python-headless \
