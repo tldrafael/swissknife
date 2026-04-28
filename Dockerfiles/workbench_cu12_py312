@@ -161,3 +161,4 @@ print("detectron2 import: ok")
 PY
 
 CMD ["/bin/bash"]
+CMD ["jupyter-lab", "--no-browser", "--ip", "0.0.0.0", "--allow-root", "--port", "8884"]
