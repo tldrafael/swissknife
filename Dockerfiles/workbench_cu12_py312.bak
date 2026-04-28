@@ -1,0 +1,85 @@
+FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
+
+RUN apt-get update && \
+    apt-get install -y cmake \
+                        build-essential \
+                        libopenblas-dev \
+                        libhdf5-dev \
+                        apt-utils \
+                        curl \
+                        libgl1 \
+                        libglib2.0-dev \
+                        python3.12 \
+                        python3.12-dev \
+                        python3-pip \
+                        git \
+                        vim \
+                        tmux \
+                        htop \
+                        rsync \
+                        ninja-build
+
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs
+
+RUN pip install --break-system-packages \
+                packaging \
+                setuptools \
+                wheel
+
+RUN pip install --break-system-packages \
+                jupyterlab \
+                opencv-python-headless \
+                kornia \
+                easydict \
+                seaborn \
+                line_profiler \
+                pycocotools \
+                matplotlib \
+                scikit-image \
+                pandas \
+                numpy \
+                imageio[pyav] \
+                scikit-learn \
+                fairscale \
+                pylance \
+                pyarrow \
+                duckdb \
+                imagesize \
+                lancedb \
+                lance
+
+RUN pip install --break-system-packages \
+                torch \
+                torchvision \
+                torchaudio \
+                --index-url https://download.pytorch.org/whl/cu126
+
+RUN pip install --break-system-packages \
+                deepspeed \
+                accelerate \
+                tensorboard \
+                einops \
+                transformers \
+                'git+https://github.com/facebookresearch/detectron2.git' \
+                onnxruntime \
+                timm \
+                onnx \
+                tritonclient[http] \
+                bitsandbytes \
+                liger-kernel \
+                torchmetrics
+
+RUN pip install --break-system-packages --force-reinstall --no-deps \
+                torch \
+                torchvision \
+                torchaudio \
+                --index-url https://download.pytorch.org/whl/cu126
+
+RUN pip install --break-system-packages \
+                "https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
+
+
+# WORKDIR /home/rafael/workspace/PX-Matting/notebooks
+# CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root
+CMD ["/bin/bash"]

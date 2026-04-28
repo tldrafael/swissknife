@@ -1,84 +1,164 @@
-FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
+# syntax=docker/dockerfile:1.7
 
-RUN apt-get update && \
-    apt-get install -y cmake \
-                        build-essential \
-                        libopenblas-dev \
-                        libhdf5-dev \
-                        apt-utils \
-                        curl \
-                        libgl1 \
-                        libglib2.0-dev \
-                        python3.12 \
-                        python3.12-dev \
-                        python3-pip \
-                        git \
-                        vim \
-                        ninja-build
+ARG CUDA_VERSION=12.8.1
+ARG UBUNTU_VERSION=24.04
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
 
-RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
-    apt-get install -y nodejs
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN pip install --break-system-packages \
-                packaging \
-                setuptools \
-                wheel
+ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGETARCH
+ARG PYTHON_VERSION=3.12
+ARG NODE_MAJOR=24
 
-RUN pip install --break-system-packages \
-                jupyterlab \
-                opencv-python-headless \
-                kornia \
-                easydict \
-                seaborn \
-                line_profiler \
-                pycocotools \
-                matplotlib \
-                scikit-image \
-                pandas \
-                numpy \
-                imageio[pyav] \
-                scikit-learn \
-                fairscale \
-                pylance \
-                pyarrow \
-                duckdb \
-                imagesize \
-                lancedb \
-                lance
+ARG PYTORCH_CUDA=cu128
+ARG TORCH_VERSION=2.10.0
+ARG TORCHVISION_VERSION=0.25.0
+ARG TORCHAUDIO_VERSION=2.10.0
 
-RUN pip install --break-system-packages \
-                torch \
-                torchvision \
-                torchaudio \
-                --index-url https://download.pytorch.org/whl/cu126
+ARG DETECTRON2_REF=main
 
-RUN pip install --break-system-packages \
-                deepspeed \
-                accelerate \
-                tensorboard \
-                einops \
-                transformers \
-                'git+https://github.com/facebookresearch/detectron2.git' \
-                onnxruntime \
-                timm \
-                onnx \
-                tritonclient[http] \
-                bitsandbytes \
-                liger-kernel \
-                torchmetrics
+# This wheel is x86_64, Python 3.12, CUDA 12.8, Torch 2.10.
+# For production, mirror this internally or pin it with a checksum.
+ARG FLASH_ATTN_WHEEL_URL="https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.10-cp312/flash_attn-2.8.3%2Bcu12torch2.10cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
 
-RUN pip install --break-system-packages --force-reinstall --no-deps \
-                torch \
-                torchvision \
-                torchaudio \
-                --index-url https://download.pytorch.org/whl/cu126
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-RUN pip install --break-system-packages \
-                "https://github.com/lesj0610/flash-attention/releases/download/v2.8.3-cu12-torch2.11/flash_attn-2.8.3%2Bcu12torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl"
+WORKDIR /workspace
 
-RUN ln -s /usr/bin/python3.12 /usr/bin/python
-ENV LD_LIBRARY_PATH=/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/lib/x86_64-linux-gnu/:/usr/local/cuda/targets/x86_64-linux/lib/
+# The Flash Attention wheel below is amd64 only.
+RUN test "${TARGETARCH:-amd64}" = "amd64"
 
-# WORKDIR /home/rafael/workspace/PX-Matting/notebooks
-# CMD jupyter-lab --no-browser --ip 0.0.0.0 --port 8888 --allow-root
+# System packages and Node.js.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+    && curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        htop \
+        libaio-dev \
+        libgl1 \
+        libglib2.0-0 \
+        libglib2.0-dev \
+        libhdf5-dev \
+        libopenblas-dev \
+        ninja-build \
+        nodejs \
+        pkg-config \
+        python${PYTHON_VERSION} \
+        python${PYTHON_VERSION}-dev \
+        python${PYTHON_VERSION}-venv \
+        rsync \
+        tmux \
+        vim
+
+# Python virtual environment.
+RUN python${PYTHON_VERSION} -m venv "${VIRTUAL_ENV}" \
+    && ln -sf "${VIRTUAL_ENV}/bin/python" /usr/local/bin/python \
+    && ln -sf "${VIRTUAL_ENV}/bin/pip" /usr/local/bin/pip \
+    && python -m pip install --upgrade \
+        pip \
+        setuptools \
+        wheel \
+        packaging
+
+# PyTorch, aligned with CUDA 12.8.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        "torch==${TORCH_VERSION}" \
+        "torchvision==${TORCHVISION_VERSION}" \
+        "torchaudio==${TORCHAUDIO_VERSION}" \
+        --index-url "https://download.pytorch.org/whl/${PYTORCH_CUDA}"
+
+# Data and science stack.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        duckdb \
+        "imageio[pyav]" \
+        imagesize \
+        lance \
+        lancedb \
+        matplotlib \
+        numpy \
+        opencv-python-headless \
+        pandas \
+        pillow \
+        pyarrow \
+        scikit-image \
+        scikit-learn \
+        scipy \
+        seaborn
+
+# ML and DL ecosystem.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        accelerate \
+        bitsandbytes \
+        deepspeed \
+        einops \
+        fairscale \
+        liger-kernel \
+        onnx \
+        onnxruntime \
+        tensorboard \
+        timm \
+        torchmetrics \
+        transformers \
+        "tritonclient[http]"
+
+# Dev, profiling, and Detectron2 runtime dependencies.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        cloudpickle \
+        easydict \
+        fvcore \
+        hydra-core \
+        iopath \
+        jupyterlab \
+        kornia \
+        line_profiler \
+        omegaconf \
+        pycocotools \
+        tabulate \
+        termcolor \
+        tqdm \
+        yacs
+
+# Flash Attention.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install "${FLASH_ATTN_WHEEL_URL}"
+
+# Detectron2 from source.
+# no-deps prevents pip from replacing the already pinned CUDA Torch build.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --no-build-isolation --no-deps \
+        "git+https://github.com/facebookresearch/detectron2.git@${DETECTRON2_REF}"
+
+# Lightweight import checks. This does not require a GPU during docker build.
+RUN python - <<'PY'
+import torch
+import torchvision
+import torchaudio
+import flash_attn
+import detectron2
+
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("torchvision:", torchvision.__version__)
+print("torchaudio:", torchaudio.__version__)
+print("flash_attn:", getattr(flash_attn, "__version__", "unknown"))
+print("detectron2 import: ok")
+PY
+
 CMD ["/bin/bash"]
