@@ -173,5 +173,4 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 EXPOSE 22 8884
 
-# CMD ["/bin/bash"]
-CMD ["/bin/bash", "-c", "/usr/sbin/sshd && exec jupyter-lab --no-browser --ip 0.0.0.0 --allow-root --port 8884"]
+CMD ["/bin/bash", "-lc", "mkdir -p /root/.ssh && chmod 700 /root/.ssh && echo \"$PUBLIC_KEY\" >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && service ssh start && exec jupyter-lab --no-browser --ip 0.0.0.0 --allow-root --port 8884"]
