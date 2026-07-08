@@ -1,0 +1,179 @@
+# syntax=docker/dockerfile:1.7
+
+ARG CUDA_VERSION=13.0.0
+ARG UBUNTU_VERSION=24.04
+FROM nvidia/cuda:${CUDA_VERSION}-devel-ubuntu${UBUNTU_VERSION}
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG TARGETARCH
+ARG PYTHON_VERSION=3.12
+ARG NODE_MAJOR=24
+
+ARG PYTORCH_CUDA=cu130
+ARG TORCH_VERSION=2.10.0
+ARG TORCHVISION_VERSION=0.25.0
+ARG TORCHAUDIO_VERSION=2.10.0
+
+ARG DETECTRON2_REF=main
+
+# No prebuilt cu13 wheel is published upstream, so Flash Attention is built
+# from source against this image's CUDA 13.0 toolkit and pinned Torch build.
+ARG FLASH_ATTN_VERSION=2.8.3
+
+ENV VIRTUAL_ENV=/opt/venv \
+    PATH="/opt/venv/bin:${PATH}" \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /workspace
+
+# Flash Attention is built from source below and only tested on amd64.
+RUN test "${TARGETARCH:-amd64}" = "amd64"
+
+# System packages and Node.js.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        gnupg \
+    && curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash - \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        cmake \
+        git \
+        htop \
+        libaio-dev \
+        libgl1 \
+        libglib2.0-0 \
+        libglib2.0-dev \
+        libhdf5-dev \
+        libopenblas-dev \
+        ninja-build \
+        nodejs \
+        pkg-config \
+        python${PYTHON_VERSION} \
+        python${PYTHON_VERSION}-dev \
+        python${PYTHON_VERSION}-venv \
+        rsync \
+        tmux \
+        vim
+
+# Python virtual environment.
+RUN python${PYTHON_VERSION} -m venv "${VIRTUAL_ENV}" \
+    && ln -sf "${VIRTUAL_ENV}/bin/python" /usr/local/bin/python \
+    && ln -sf "${VIRTUAL_ENV}/bin/pip" /usr/local/bin/pip \
+    && python -m pip install --upgrade \
+        pip \
+        setuptools \
+        wheel \
+        packaging
+
+# PyTorch, aligned with CUDA 13.0.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        "torch==${TORCH_VERSION}" \
+        "torchvision==${TORCHVISION_VERSION}" \
+        "torchaudio==${TORCHAUDIO_VERSION}" \
+        --index-url "https://download.pytorch.org/whl/${PYTORCH_CUDA}"
+
+# Data and science stack.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        duckdb \
+        "imageio[pyav]" \
+        imagesize \
+        pylance \
+        matplotlib \
+        numpy \
+        opencv-python-headless \
+        pandas \
+        pillow \
+        pyarrow \
+        scikit-image \
+        scikit-learn \
+        scipy \
+        seaborn
+
+# ML and DL ecosystem.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        accelerate \
+        bitsandbytes \
+        deepspeed \
+        einops \
+        fairscale \
+        liger-kernel \
+        onnx \
+        onnxruntime \
+        sentencepiece \
+        tensorboard \
+        timm \
+        torchmetrics \
+        transformers \
+        "tritonclient[http]"
+
+# Dev, profiling, and Detectron2 runtime dependencies.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install \
+        cloudpickle \
+        easydict \
+        fvcore \
+        hydra-core \
+        iopath \
+        jupyterlab \
+        kornia \
+        line_profiler \
+        omegaconf \
+        pycocotools \
+        tabulate \
+        termcolor \
+        tqdm \
+        yacs
+
+# Flash Attention, built from source (no prebuilt cu13 wheel is available).
+# no-build-isolation ensures the build uses the already pinned CUDA Torch build.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    MAX_JOBS=4 python -m pip install --no-build-isolation \
+        "flash-attn==${FLASH_ATTN_VERSION}"
+
+# Detectron2 from source.
+# no-deps prevents pip from replacing the already pinned CUDA Torch build.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --no-build-isolation --no-deps \
+        "git+https://github.com/facebookresearch/detectron2.git@${DETECTRON2_REF}"
+
+# Lightweight import checks. This does not require a GPU during docker build.
+RUN python - <<'PY'
+import torch
+import torchvision
+import torchaudio
+import flash_attn
+import detectron2
+
+print("torch:", torch.__version__)
+print("torch cuda:", torch.version.cuda)
+print("torchvision:", torchvision.__version__)
+print("torchaudio:", torchaudio.__version__)
+print("flash_attn:", getattr(flash_attn, "__version__", "unknown"))
+print("detectron2 import: ok")
+PY
+
+# SSH server and rsync.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update \
+    && apt-get install -y --no-install-recommends \
+        openssh-server \
+        rsync \
+    && mkdir -p /var/run/sshd \
+    && sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+
+EXPOSE 22 8884
+
+CMD ["/bin/bash", "-lc", "mkdir -p /root/.ssh && chmod 700 /root/.ssh && echo \"$PUBLIC_KEY\" >> /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys && service ssh start && exec jupyter-lab --no-browser --ip 0.0.0.0 --allow-root --port 8884"]
