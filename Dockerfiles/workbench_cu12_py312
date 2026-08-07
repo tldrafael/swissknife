@@ -17,6 +17,7 @@ ARG TORCHVISION_VERSION=0.25.0
 ARG TORCHAUDIO_VERSION=2.10.0
 
 ARG DETECTRON2_REF=main
+ARG SAM2_REF=main
 
 # This wheel is x86_64, Python 3.12, CUDA 12.8, Torch 2.10.
 # For production, mirror this internally or pin it with a checksum.
@@ -145,6 +146,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     python -m pip install --no-build-isolation --no-deps \
         "git+https://github.com/facebookresearch/detectron2.git@${DETECTRON2_REF}"
 
+# SAM2 (Segment Anything 2) from source.
+RUN --mount=type=cache,target=/root/.cache/pip \
+    python -m pip install --no-build-isolation \
+        "git+https://github.com/facebookresearch/sam2.git@${SAM2_REF}"
+
 # Lightweight import checks. This does not require a GPU during docker build.
 RUN python - <<'PY'
 import torch
@@ -152,6 +158,7 @@ import torchvision
 import torchaudio
 import flash_attn
 import detectron2
+import sam2
 
 print("torch:", torch.__version__)
 print("torch cuda:", torch.version.cuda)
@@ -159,6 +166,7 @@ print("torchvision:", torchvision.__version__)
 print("torchaudio:", torchaudio.__version__)
 print("flash_attn:", getattr(flash_attn, "__version__", "unknown"))
 print("detectron2 import: ok")
+print("sam2 import: ok")
 PY
 
 # SSH server and rsync.
