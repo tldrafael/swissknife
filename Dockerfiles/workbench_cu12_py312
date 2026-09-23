@@ -111,8 +111,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
         liger-kernel \
         onnx \
         onnxruntime \
+        onnxscript \
         sentencepiece \
         tensorboard \
+        tensorrt==10.11.0.33 \ 
         timm \
         torchmetrics \
         transformers \
